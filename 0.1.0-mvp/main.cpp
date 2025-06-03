@@ -71,9 +71,13 @@ std::string queue_to_string(std::queue<T> q) {
 //MAIN
 int main() {
     try {
-        int mode = 0;
-        std::cin >> mode;
         while (true) {
+            int mode = 0;
+            std::cout << std::format("{}Enter mode (1: Call Elevator, 2: Select Floor, 0: Exit):{} ", FG_CYAN, RESET);
+            std::cin >> mode;
+
+            if (mode == 0) break;
+
             switch (mode) {
                 case 1:
                     call_menu();
@@ -89,9 +93,11 @@ int main() {
                     std::cin >> floor;
                     floor_queue.push(floor);
                     std::cout << std::format("{}DEBUG: Floor pushed to queue: {}{}{}\n", FG_YELLOW, BG_WHITE, queue_to_string(floor_queue), RESET);
+                    break;
 
                 default:
                     std::cout << std::format("{}{}{}Invalid mode{}\n", BG_WHITE, FG_RED, BOLD, RESET);
+                    break;
             }
         }
     } catch (const std::exception& e ) {

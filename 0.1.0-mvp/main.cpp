@@ -1,6 +1,3 @@
-//
-// Created by i.nikiforov on 03.06.2025.
-//
 #include <iostream>
 #include <queue>
 #include <string>
@@ -10,14 +7,14 @@
 //GLOBAL: ANSI escape codes for text formatting
 const std::string FG_RESET  = "\033[39m";
 const std::string FG_RED    = "\033[31m"; // ERROR
-const std::string FG_YELLOW = "\033[33m"; // WARN/STATUS
+const std::string FG_YELLOW = "\033[38;5;220m"; // WARN/STATUS
 const std::string FG_GREEN  = "\033[32m"; // OK
 const std::string FG_CYAN   = "\033[36m"; // INFO
 const std::string FG_BLACK  = "\033[30m"; // CONTRAST
 const std::string BOLD      = "\033[1m";
 
 //GLOBAL: ANSI escape codes for Backgrounds
-const std::string BG_BLUE   = "\033[48;5;33m";
+const std::string BG_BLUE   = "\033[48;5;75m";
 const std::string BG_WHITE  = "\033[48;5;255m"; // OUTLINE
 const std::string BG_RESET  = "\033[49m";
 
@@ -32,21 +29,21 @@ std::queue<int> floor_queue;
 void call_menu(){
     std::cout << std::format("{}{}{}=========| Call Elevator |========={}\n", BG_WHITE, FG_BLACK, BOLD, RESET);
     std::cout << std::format("{}{}{}|{}                                 {}|{}\n", BG_WHITE, FG_BLACK, BOLD, BG_BLUE, BG_WHITE, RESET);
-    std::cout << std::format("{}{}{}|{}           {}[1] - ^ UP ^          {}{}|{}\n", BG_WHITE, FG_BLACK, BOLD, BG_BLUE, FG_CYAN, BG_WHITE, FG_BLACK, RESET);
-    std::cout << std::format("{}{}{}|{}           {}[2] - v DOWN v        {}{}|{}\n", BG_WHITE, FG_BLACK, BOLD, BG_BLUE, FG_CYAN, BG_WHITE, FG_BLACK, RESET);
+    std::cout << std::format("{}{}{}|{}           [1] - ^ UP ^          {}{}|{}\n", BG_WHITE, FG_BLACK, BOLD, BG_BLUE, BG_WHITE, FG_BLACK, RESET);
+    std::cout << std::format("{}{}{}|{}           [2] - v DOWN v        {}{}|{}\n", BG_WHITE, FG_BLACK, BOLD, BG_BLUE, BG_WHITE, FG_BLACK, RESET);
     std::cout << std::format("{}{}{}|{}                                 {}|{}\n", BG_WHITE, FG_BLACK, BOLD, BG_BLUE, BG_WHITE, RESET);
     std::cout << std::format("{}{}{}==================================={}\n", BG_WHITE, FG_BLACK, BOLD, RESET);
 };
 
-//floor selection
+//floor selection menu
 void floor_select(){
     std::cout << std::format("{}{}{}=========| Select Floor |========={}\n", BG_WHITE, FG_BLACK, BOLD, RESET);
     std::cout << std::format("{}{}{}|{}                                 {}|{}\n", BG_WHITE, FG_BLACK, BOLD, BG_BLUE, BG_WHITE, RESET);
-    std::cout << std::format("{}{}{}|{}        {}[1] - 1st Floor          {}{}|{}\n", BG_WHITE, FG_BLACK, BOLD, BG_BLUE, FG_YELLOW, BG_WHITE, FG_BLACK, RESET);
-    std::cout << std::format("{}{}{}|{}        {}[2] - 2nd Floor          {}{}|{}\n", BG_WHITE, FG_BLACK, BOLD, BG_BLUE, FG_YELLOW, BG_WHITE, FG_BLACK, RESET);
-    std::cout << std::format("{}{}{}|{}        {}[3] - 3rd Floor          {}{}|{}\n", BG_WHITE, FG_BLACK, BOLD, BG_BLUE, FG_YELLOW, BG_WHITE, FG_BLACK, RESET);
-    std::cout << std::format("{}{}{}|{}        {}[4] - 4th Floor          {}{}|{}\n", BG_WHITE, FG_BLACK, BOLD, BG_BLUE, FG_YELLOW, BG_WHITE, FG_BLACK, RESET);
-    std::cout << std::format("{}{}{}|{}        {}[5] - 5th Floor        {}{}|{}\n", BG_WHITE, FG_BLACK, BOLD, BG_BLUE, FG_YELLOW, BG_WHITE, FG_BLACK, RESET);
+    std::cout << std::format("{}{}{}|{}        [1] - 1st Floor          {}{}|{}\n", BG_WHITE, FG_BLACK, BOLD, BG_BLUE, BG_WHITE, FG_BLACK, RESET);
+    std::cout << std::format("{}{}{}|{}        [2] - 2nd Floor          {}{}|{}\n", BG_WHITE, FG_BLACK, BOLD, BG_BLUE, BG_WHITE, FG_BLACK, RESET);
+    std::cout << std::format("{}{}{}|{}        [3] - 3rd Floor          {}{}|{}\n", BG_WHITE, FG_BLACK, BOLD, BG_BLUE, BG_WHITE, FG_BLACK, RESET);
+    std::cout << std::format("{}{}{}|{}        [4] - 4th Floor          {}{}|{}\n", BG_WHITE, FG_BLACK, BOLD, BG_BLUE, BG_WHITE, FG_BLACK, RESET);
+    std::cout << std::format("{}{}{}|{}        [5] - 5th Floor          {}{}|{}\n", BG_WHITE, FG_BLACK, BOLD, BG_BLUE, BG_WHITE, FG_BLACK, RESET);
     std::cout << std::format("{}{}{}|{}                                 {}|{}\n", BG_WHITE, FG_BLACK, BOLD, BG_BLUE, BG_WHITE, RESET);
     std::cout << std::format("{}{}{}==================================={}\n", BG_WHITE, FG_BLACK, BOLD, RESET);
 };
@@ -84,7 +81,7 @@ int main() {
                     int direction;
                     std::cin >> direction;
                     request_queue.push(direction);
-                    std::cout << std::format("{}DEBUG: Request pushed to queue: {}{}{}\n", FG_YELLOW, BG_WHITE, queue_to_string(request_queue), RESET);
+                    std::cout << std::format("{}DEBUG: Request pushed to queue: {}{}{}{}\n", FG_YELLOW, BG_WHITE, FG_BLACK, queue_to_string(request_queue), RESET);
                     break;
 
                 case 2:
@@ -92,7 +89,7 @@ int main() {
                     int floor;
                     std::cin >> floor;
                     floor_queue.push(floor);
-                    std::cout << std::format("{}DEBUG: Floor pushed to queue: {}{}{}\n", FG_YELLOW, BG_WHITE, queue_to_string(floor_queue), RESET);
+                    std::cout << std::format("{}DEBUG: Floor pushed to queue: {}{}{}{}\n", FG_YELLOW, BG_WHITE, FG_BLACK, queue_to_string(floor_queue), RESET);
                     break;
 
                 default:

@@ -27,6 +27,7 @@ const std::string RESET = "\033[0m";
 //GLOBAL: queues
 std::queue<int> request_queue;
 std::queue<int> floor_queue;
+std::queue<int> call_origin;
 
 //External elevator call menu prefab
 void call_menu(){
@@ -69,10 +70,10 @@ void elevator_movement(int dest) {
     if (dest >= 1 && dest <= floors.size()) {
         std::cout << std::format("{}{}Moving elevator to floor {}. Please wait...{}\n", FG_YELLOW, BOLD, dest, RESET);
         while (current_floor != dest) {
-            if (dest > current_floor) {
+            if (dest > current_floor || dest > call_origin.front()) {
                 std::cout << std::format("{}{}/\\{}\n", FG_GREEN, BOLD, RESET); //Moving UP
                 current_floor++;
-            } else if (dest < current_floor) {
+            } else if (dest < current_floor || dest < call_origin.front()) {
                 std::cout << std::format("{}{}\\/{}\n", FG_GREEN, BOLD, RESET); // moving DOWN
                 current_floor--;
             }
@@ -115,12 +116,14 @@ int main() {
                     call_menu();
                     int direction;
                     int my_floor;
+
                     std::cin >> direction;
                     std::cout << std::format("{}{}Please enter your current floor: {}", FG_CYAN, BG_WHITE, RESET);
                     std::cin >> my_floor;
                     request_queue.push(direction);
+                    call_origin.push(my_floor);
                     std::cout << std::format("{}DEBUG: Request pushed to queue: {}{}{}{}\n", FG_YELLOW, BG_WHITE, FG_BLACK, queue_to_string(request_queue), RESET);
-                    elevator_movement(my_floor);
+                    elevator_movement(request_queue.front());
                     break;
 
                 case 2:
@@ -130,7 +133,7 @@ int main() {
                     std::cin >> floor;
                     floor_queue.push(floor);
                     std::cout << std::format("{}DEBUG: Floor pushed to queue: {}{}{}{}\n", FG_YELLOW, BG_WHITE, FG_BLACK, queue_to_string(floor_queue), RESET);
-                    elevator_movement(floor);
+                    elevator_movement(floor_queue.front());
                     break;
 
                 default:

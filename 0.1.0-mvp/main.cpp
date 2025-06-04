@@ -70,10 +70,10 @@ void elevator_movement(int dest) {
     if (dest >= 1 && dest <= floors.size()) {
         std::cout << std::format("{}{}Moving elevator to floor {}. Please wait...{}\n", FG_YELLOW, BOLD, dest, RESET);
         while (current_floor != dest) {
-            if (dest > current_floor || dest > call_origin.front()) {
+            if (dest > current_floor) {
                 std::cout << std::format("{}{}/\\{}\n", FG_GREEN, BOLD, RESET); //Moving UP
                 current_floor++;
-            } else if (dest < current_floor || dest < call_origin.front()) {
+            } else if (dest < current_floor) {
                 std::cout << std::format("{}{}\\/{}\n", FG_GREEN, BOLD, RESET); // moving DOWN
                 current_floor--;
             }
@@ -123,7 +123,7 @@ int main() {
                     request_queue.push(direction);
                     call_origin.push(my_floor);
                     std::cout << std::format("{}DEBUG: Request pushed to queue: {}{}{}{}\n", FG_YELLOW, BG_WHITE, FG_BLACK, queue_to_string(request_queue), RESET);
-                    elevator_movement(request_queue.front());
+                    elevator_movement(my_floor);
                     break;
 
                 case 2:
@@ -133,7 +133,7 @@ int main() {
                     std::cin >> floor;
                     floor_queue.push(floor);
                     std::cout << std::format("{}DEBUG: Floor pushed to queue: {}{}{}{}\n", FG_YELLOW, BG_WHITE, FG_BLACK, queue_to_string(floor_queue), RESET);
-                    elevator_movement(floor_queue.front());
+                    elevator_movement(floor);
                     break;
 
                 default:

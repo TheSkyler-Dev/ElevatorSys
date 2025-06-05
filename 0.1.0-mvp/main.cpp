@@ -57,9 +57,28 @@ int current_floor = 1; //first floor
 
 //Door control function
 void doors() {
-    if  (current_floor == floor_queue.front()) {
-        std::cout << std::format("{}Door open{}\n", FG_GREEN, RESET);
+    bool should_open = false;
+
+    // Check floor_queue
+    if (!floor_queue.empty() && current_floor == floor_queue.front()) {
+        should_open = true;
         floor_queue.pop();
+    }
+
+    // Check call_origin
+    if (!call_origin.empty() && current_floor == call_origin.front()) {
+        should_open = true;
+        call_origin.pop();
+
+        // Also pop the corresponding request_queue entry if it exists
+        if (!request_queue.empty()) {
+            request_queue.pop();
+        }
+    }
+
+    // Open doors if needed
+    if (should_open) {
+        std::cout << std::format("{}Door open{}\n", FG_GREEN, RESET);
     }
 }
 
@@ -71,10 +90,10 @@ void elevator_movement(int dest) {
         std::cout << std::format("{}{}Moving elevator to floor {}. Please wait...{}\n", FG_YELLOW, BOLD, dest, RESET);
         while (current_floor != dest) {
             if (dest > current_floor) {
-                std::cout << std::format("{}{}/\\{}\n", FG_GREEN, BOLD, RESET); //Moving UP
+                std::cout << std::format("{}{}/\\ - Floor {}{}\n", FG_GREEN, BOLD, current_floor, RESET); //Moving UP
                 current_floor++;
             } else if (dest < current_floor) {
-                std::cout << std::format("{}{}\\/{}\n", FG_GREEN, BOLD, RESET); // moving DOWN
+                std::cout << std::format("{}{}\\/ - Floor {}{}\n", FG_GREEN, BOLD, current_floor, RESET); // moving DOWN
                 current_floor--;
             }
             //simulate movement time

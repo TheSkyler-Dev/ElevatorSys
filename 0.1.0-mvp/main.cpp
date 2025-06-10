@@ -6,6 +6,9 @@
 #include <list>
 #include <thread>
 #include <chrono>
+#include <future>
+#include <mutex>
+#include <vector>
 
 //GLOBAL: Constant ANSI escape codes for text formatting
 const std::string FG_RESET  = "\033[39m";
@@ -52,6 +55,7 @@ void floor_select(){
     std::cout << std::format("{}{}{}==================================={}\n", BG_WHITE, FG_BLACK, BOLD, RESET);
 };
 
+std::mutex floor_mutex;
 //GLOBAL: Current Floor
 int current_floor = 1; //first floor
 
@@ -83,49 +87,31 @@ void doors() {
 }
 
 //Function: Define Elevator movement flow
-void elevator_movement(int dest) {
-    std::list<int> floors = {1, 2, 3, 4, 5};
+std::future<void> elevator_movement(int dest) {
+    return std::async(std::launch::async, [dest]() {
+        std::list<int> floors = {1, 2, 3, 4, 5};
 
-    if (dest >= 1 && dest <= floors.size()) {
-        std::cout << std::format("{}{}Moving elevator to floor {}. Please wait...{}\n", FG_YELLOW, BOLD, dest, RESET);
-        while (current_floor != dest) {
-            if (dest > current_floor) {
-                std::cout << std::format("{}{}/\\ - Floor {}{}\n", FG_GREEN, BOLD, current_floor, RESET); //Moving UP
-                current_floor++;
-            } else if (dest < current_floor) {
-                std::cout << std::format("{}{}\\/ - Floor {}{}\n", FG_GREEN, BOLD, current_floor, RESET); // moving DOWN
-                current_floor--;
+        if (dest >= 1 && dest <= floors.size()) {
+            std::cout << std::format("{}{}Moving elevator to floor {}. Please wait...{}\n", 
+                                   FG_YELLOW, BOLD, dest, RESET);
+            while (current_floor != dest) {
+                if (dest > current_floor) {
+                    std::cout << std::format("{}{}/\\ - Floor {}{}\n", 
+                                           FG_GREEN, BOLD, current_floor, RESET);
+                    current_floor++;
+                } else if (dest < current_floor) {
+                    std::cout << std::format("{}{}\\/ - Floor {}{}\n", 
+                                           FG_GREEN, BOLD, current_floor, RESET);
+                    current_floor--;
+                }
+                std::this_thread::sleep_for(std::chrono::milliseconds(10000));
             }
-            //simulate movement time
-            std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+            doors();
+        } else {
+            std::cout << std::format("{}{}Error: {} is out of bounds.{}\n", 
+                                   BG_WHITE, FG_RED, dest, RESET);
         }
-        doors();
-
-    } else {
-        std::cout << std::format("{}{}Error: {} is out of bounds.{}\n", BG_WHITE, FG_RED, dest, RESET);
-    }
-}
-
-void call_elev() {
-    call_menu();
-    int direction;
-    int my_floor;
-    std::cin >> direction;
-    std::cout << std::format("{}{}Please enter your current floor: {}", FG_CYAN, BG_WHITE, RESET);
-    std::cin >> my_floor;
-    request_queue.push(direction);
-    call_origin.push(my_floor);
-    std::cout << std::format("{}DEBUG: Request pushed to queue: {}{}{}{}\n", FG_YELLOW, BG_WHITE, FG_BLACK, queue_to_string(request_queue), RESET);
-    elevator_movement(my_floor);
-}
-
-void select_floor() {
-    int floor;
-    std::cout << std::format("{}Hint: You are on floor {}.{}\n", FG_YELLOW, current_floor, RESET);
-    std::cin >> floor;
-    floor_queue.push(floor);
-    std::cout << std::format("{}DEBUG: Floor pushed to queue: {}{}{}{}\n", FG_YELLOW, BG_WHITE, FG_BLACK, queue_to_string(floor_queue), RESET);
-    elevator_movement(floor);
+    });
 }
 
 // Helper function to convert queue contents to string. DEBUG ONLY
@@ -142,31 +128,76 @@ std::string queue_to_string(std::queue<T> q) {
     return ss.str();
 }
 
+void call_elev() {
+    call_menu();
+    int direction;
+    int my_floor;
+    std::cin >> direction;
+    std::cout << std::format("{}{}Please enter your current floor: {}", FG_CYAN, BG_WHITE, RESET);
+    std::cin >> my_floor;
+    request_queue.push(direction);
+    call_origin.push(my_floor);
+    std::cout << std::format("{}DEBUG: Request pushed to queue: {}{}{}{}\n", FG_YELLOW, BG_WHITE, FG_BLACK, queue_to_string(request_queue), RESET);
+    auto future = elevator_movement(my_floor);
+}
+
+void select_floor() {
+    floor_select();
+    int floor;
+    std::cout << std::format("{}Hint: You are on floor {}.{}\n", FG_YELLOW, current_floor, RESET);
+    std::cin >> floor;
+    floor_queue.push(floor);
+    std::cout << std::format("{}DEBUG: Floor pushed to queue: {}{}{}{}\n", FG_YELLOW, BG_WHITE, FG_BLACK, queue_to_string(floor_queue), RESET);
+    auto future = elevator_movement(floor);
+}
+
 //MAIN
 int main() {
     try {
-        while (true) {
+        int request_count = 0;
+        std::vector<std::future<void>> pending_movements;
+
+        // Continue until at least 2 requests have been processed
+        while (request_count < 2) {
             int mode = 0;
-            std::cout << std::format("{}Enter mode (1: Call Elevator, 2: Select Floor, 0: Exit):{} ", FG_CYAN, RESET);
+            std::cout << std::format("{}Enter mode (1: Call Elevator, 2: Select Floor, 0: Exit):{} ", 
+                                   FG_CYAN, RESET);
             std::cin >> mode;
 
             if (mode == 0) break;
 
             switch (mode) {
-                case 1:
+                case 1: {
                     call_elev();
+                    request_count++;
                     break;
-
-                case 2:
+                }
+                case 2: {
                     select_floor();
+                    request_count++;
                     break;
-
+                }
                 default:
-                    std::cout << std::format("{}{}{}Invalid mode{}\n", BG_WHITE, FG_RED, BOLD, RESET);
+                    std::cout << std::format("{}{}{}Invalid mode{}\n", 
+                                           BG_WHITE, FG_RED, BOLD, RESET);
                     break;
             }
+
+            // Optional: Print how many more requests are needed
+            if (request_count < 2) {
+                std::cout << std::format("{}Please make {} more request(s){}\n", 
+                                       FG_CYAN, 2 - request_count, RESET);
+            }
         }
-    } catch (const std::exception& e ) {
+
+        // Wait for any pending elevator movements to complete before exiting
+        for (auto& future : pending_movements) {
+            if (future.valid()) {
+                future.wait();
+            }
+        }
+
+    } catch (const std::exception& e) {
         std::cout << e.what() << '\n';
         throw std::runtime_error("Invalid mode");
     }

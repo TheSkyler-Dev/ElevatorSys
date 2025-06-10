@@ -106,6 +106,28 @@ void elevator_movement(int dest) {
     }
 }
 
+void call_elev() {
+    call_menu();
+    int direction;
+    int my_floor;
+    std::cin >> direction;
+    std::cout << std::format("{}{}Please enter your current floor: {}", FG_CYAN, BG_WHITE, RESET);
+    std::cin >> my_floor;
+    request_queue.push(direction);
+    call_origin.push(my_floor);
+    std::cout << std::format("{}DEBUG: Request pushed to queue: {}{}{}{}\n", FG_YELLOW, BG_WHITE, FG_BLACK, queue_to_string(request_queue), RESET);
+    elevator_movement(my_floor);
+}
+
+void select_floor() {
+    int floor;
+    std::cout << std::format("{}Hint: You are on floor {}.{}\n", FG_YELLOW, current_floor, RESET);
+    std::cin >> floor;
+    floor_queue.push(floor);
+    std::cout << std::format("{}DEBUG: Floor pushed to queue: {}{}{}{}\n", FG_YELLOW, BG_WHITE, FG_BLACK, queue_to_string(floor_queue), RESET);
+    elevator_movement(floor);
+}
+
 // Helper function to convert queue contents to string. DEBUG ONLY
 template<typename T>
 std::string queue_to_string(std::queue<T> q) {
@@ -132,27 +154,11 @@ int main() {
 
             switch (mode) {
                 case 1:
-                    call_menu();
-                    int direction;
-                    int my_floor;
-
-                    std::cin >> direction;
-                    std::cout << std::format("{}{}Please enter your current floor: {}", FG_CYAN, BG_WHITE, RESET);
-                    std::cin >> my_floor;
-                    request_queue.push(direction);
-                    call_origin.push(my_floor);
-                    std::cout << std::format("{}DEBUG: Request pushed to queue: {}{}{}{}\n", FG_YELLOW, BG_WHITE, FG_BLACK, queue_to_string(request_queue), RESET);
-                    elevator_movement(my_floor);
+                    call_elev();
                     break;
 
                 case 2:
-                    floor_select();
-                    int floor;
-                    std::cout << std::format("{}Hint: You are on floor {}.{}\n", FG_YELLOW, current_floor, RESET);
-                    std::cin >> floor;
-                    floor_queue.push(floor);
-                    std::cout << std::format("{}DEBUG: Floor pushed to queue: {}{}{}{}\n", FG_YELLOW, BG_WHITE, FG_BLACK, queue_to_string(floor_queue), RESET);
-                    elevator_movement(floor);
+                    select_floor();
                     break;
 
                 default:

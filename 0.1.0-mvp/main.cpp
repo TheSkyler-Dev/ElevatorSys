@@ -9,6 +9,7 @@
 #include <future>
 #include <mutex>
 #include <vector>
+#include "main_header.h"
 
 //GLOBAL: Constant ANSI escape codes for text formatting
 const std::string FG_RESET  = "\033[39m";
@@ -56,11 +57,13 @@ void floor_select(){
 };
 
 std::mutex floor_mutex;
+std::mutex queue_mutex;
 //GLOBAL: Current Floor
 int current_floor = 1; //first floor
 
 //Door control function
 void doors() {
+    std::lock_guard<std::mutex> lock(floor_mutex);
     bool should_open = false;
 
     // Check floor_queue
@@ -94,18 +97,22 @@ std::future<void> elevator_movement(int dest) {
         if (dest >= 1 && dest <= floors.size()) {
             std::cout << std::format("{}{}Moving elevator to floor {}. Please wait...{}\n", 
                                    FG_YELLOW, BOLD, dest, RESET);
-            while (current_floor != dest) {
+            while (true) {
+                std::lock_guard<std::mutex> lock(floor_mutex);
+                if (current_floor == dest) break;
+                
                 if (dest > current_floor) {
                     std::cout << std::format("{}{}/\\ - Floor {}{}\n", 
                                            FG_GREEN, BOLD, current_floor, RESET);
                     current_floor++;
-                } else if (dest < current_floor) {
+                } else {
                     std::cout << std::format("{}{}\\/ - Floor {}{}\n", 
                                            FG_GREEN, BOLD, current_floor, RESET);
                     current_floor--;
                 }
-                std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+                // Release lock before sleep
             }
+            std::this_thread::sleep_for(std::chrono::milliseconds(10000));
             doors();
         } else {
             std::cout << std::format("{}{}Error: {} is out of bounds.{}\n", 
@@ -132,12 +139,35 @@ void call_elev() {
     call_menu();
     int direction;
     int my_floor;
-    std::cin >> direction;
-    std::cout << std::format("{}{}Please enter your current floor: {}", FG_CYAN, BG_WHITE, RESET);
-    std::cin >> my_floor;
-    request_queue.push(direction);
-    call_origin.push(my_floor);
-    std::cout << std::format("{}DEBUG: Request pushed to queue: {}{}{}{}\n", FG_YELLOW, BG_WHITE, FG_BLACK, queue_to_string(request_queue), RESET);
+    
+    if (!(std::cin >> direction) || (direction != 1 && direction != 2)) {
+        std::cout << std::format("{}{}Invalid direction input{}\n", 
+                               BG_WHITE, FG_RED, RESET);
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        return;
+    }
+
+    std::cout << std::format("{}{}Please enter your current floor: {}", 
+                           FG_CYAN, BG_WHITE, RESET);
+                           
+    if (!(std::cin >> my_floor) || my_floor < 1 || my_floor > 5) {
+        std::cout << std::format("{}{}Invalid floor input{}\n", 
+                               BG_WHITE, FG_RED, RESET);
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        return;
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(queue_mutex);
+        request_queue.push(direction);
+        call_origin.push(my_floor);
+    }
+    
+    std::cout << std::format("{}DEBUG: Request pushed to queue: {}{}{}{}\n", 
+                           FG_YELLOW, BG_WHITE, FG_BLACK, 
+                           queue_to_string(request_queue), RESET);
     auto future = elevator_movement(my_floor);
 }
 
@@ -151,55 +181,51 @@ void select_floor() {
     auto future = elevator_movement(floor);
 }
 
-//MAIN
+#ifndef EXCLUDE_MAIN
 int main() {
     try {
         int request_count = 0;
         std::vector<std::future<void>> pending_movements;
 
-        // Continue until at least 2 requests have been processed
         while (request_count < 2) {
             int mode = 0;
             std::cout << std::format("{}Enter mode (1: Call Elevator, 2: Select Floor, 0: Exit):{} ", 
                                    FG_CYAN, RESET);
-            std::cin >> mode;
+            
+            if (!(std::cin >> mode)) {
+                std::cout << std::format("{}Invalid input{}\n", FG_RED, RESET);
+                std::cin.clear();
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                continue;
+            }
 
             if (mode == 0) break;
 
             switch (mode) {
-                case 1: {
+                case 1:
                     call_elev();
                     request_count++;
                     break;
-                }
-                case 2: {
+                case 2:
                     select_floor();
                     request_count++;
                     break;
-                }
                 default:
                     std::cout << std::format("{}{}{}Invalid mode{}\n", 
                                            BG_WHITE, FG_RED, BOLD, RESET);
                     break;
             }
-
-            // Optional: Print how many more requests are needed
+            
             if (request_count < 2) {
                 std::cout << std::format("{}Please make {} more request(s){}\n", 
                                        FG_CYAN, 2 - request_count, RESET);
             }
         }
 
-        // Wait for any pending elevator movements to complete before exiting
-        for (auto& future : pending_movements) {
-            if (future.valid()) {
-                future.wait();
-            }
-        }
-
     } catch (const std::exception& e) {
-        std::cout << e.what() << '\n';
-        throw std::runtime_error("Invalid mode");
+        std::cerr << std::format("{}Error: {}{}\n", FG_RED, e.what(), RESET);
+        return 1;
     }
     return 0;
 }
+#endif // EXCLUDE_MAIN

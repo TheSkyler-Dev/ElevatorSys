@@ -175,9 +175,19 @@ void select_floor() {
     floor_select();
     int floor;
     std::cout << std::format("{}Hint: You are on floor {}.{}\n", FG_YELLOW, current_floor, RESET);
-    std::cin >> floor;
+    
+    if (!(std::cin >> floor) || floor < 1 || floor > 5) {
+        std::cout << std::format("{}{}Invalid floor input{}\n", 
+                               BG_WHITE, FG_RED, RESET);
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        return;
+    }
+    
     floor_queue.push(floor);
-    std::cout << std::format("{}DEBUG: Floor pushed to queue: {}{}{}{}\n", FG_YELLOW, BG_WHITE, FG_BLACK, queue_to_string(floor_queue), RESET);
+    std::cout << std::format("{}DEBUG: Floor pushed to queue: {}{}{}{}\n", 
+                           FG_YELLOW, BG_WHITE, FG_BLACK, 
+                           queue_to_string(floor_queue), RESET);
     auto future = elevator_movement(floor);
 }
 
